@@ -65,7 +65,7 @@
     autorun = true;
     layout = "us";
 
-    videDrivers = ["nvidia"];
+    videoDrivers = ["nvidia"];
 
     desktopManager = {
       xterm.enable = false;
