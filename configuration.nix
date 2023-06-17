@@ -27,7 +27,7 @@
           insmod fat
           insmod search_fs_uuid
           insmod chain
-          search --fs-uuid --set=root $UUID
+          search --fs-uuid --set=root 9468-6FFE
           chainloader /EFI/Microsoft/Boot/bootmgfw.efi
         }
     '';
@@ -49,39 +49,61 @@
   #  useXkbConfig = true; # use xkbOptions in tty.
   #};
 
-  # Window Manager Configuration
-  #services.xserver.enable = true;
-  #services.xserver.autorun = true;
-  #services.xserver.layout = "us";
-  #services.xserver.displayManager.sddm.enable = true;
-  #services.xserver.windowManager.i3.enable = true;
-  
+  nixpkgs.config.allowUnfree = true;
+
+  nixpkgs.config.packageOverrides = pkgs: {
+    polybar = pkgs.polybar.override {
+      pulseSupport = true;
+    };
+  };
+
+  hardware.opengl.enable = true;
+  hardware.nvidia.modesetting.enable = true;
+
   services.xserver = {
     enable = true;
     autorun = true;
     layout = "us";
+
+    videDrivers = ["nvidia"];
+
     desktopManager = {
       xterm.enable = false;
     };
+
     displayManager = {
       sddm.enable = true;
       defaultSession = "none+i3";
     };
+
     windowManager.i3 = {
       enable = true;
       extraPackages = with pkgs; [
         rofi
         polybar
+        picom
+	alacritty
       ];
     };
+  };
+  
+  #Font Configuration
+  fonts.fonts = with pkgs; [
+    (nerdfonts.override { fonts = [ "FiraCode" ]; })
+  ];
+
+  #Sound Configuration
+  security.rtkit.enable = true;
+  services.pipewire = {
+    enable = true;
+    alsa.enable = true;
+    alsa.support32Bit = true;
+    pulse.enable = true;
+    jack.enable = true;
   };
 
   # Enable CUPS to print documents.
   # services.printing.enable = true;
-
-  # Enable sound.
-  # sound.enable = true;
-  # hardware.pulseaudio.enable = true;
 
   # Enable touchpad support (enabled default in most desktopManager).
   # services.xserver.libinput.enable = true;
@@ -89,24 +111,30 @@
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.justin = {
     isNormalUser = true;
-    extraGroups = [ "wheel" ]; # Enable ‘sudo’ for the user.
+    extraGroups = [ "wheel" "audio" ]; # Enable ‘sudo’ for the user.
     packages = with pkgs; [
+      vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
+      wget
+      git
+      nitrogen
+      firefox
+      xfce.thunar
+      xclip
+      htop
+      ncdu
+      pavucontrol
+      qjackctl
+      pass
+      cifs-utils
+      remmina
+      freerdp
+      gvfs
     ];
   };
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
   environment.systemPackages = with pkgs; [
-    vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
-    wget
-    alacritty
-    git
-    nitrogen
-    firefox
-    xfce.thunar
-    xclip
-    htop
-    ncdu
   ];
 
   # Some programs need SUID wrappers, can be configured further or are
