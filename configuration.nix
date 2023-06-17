@@ -57,9 +57,11 @@
     };
   };
 
-  hardware.opengl.enable = true;
-  hardware.nvidia.modesetting.enable = true;
-
+  hardware = {
+    opengl.enable = true;
+    nvidia.modesetting.enable = true;
+    nvidia.package = config.boot.kernelPackages.nvidiaPackages.latest;
+  };
   services.xserver = {
     enable = true;
     autorun = true;
