@@ -3,7 +3,9 @@
 # and in the NixOS manual (accessible by running `nixos-help`).
 
 { config, pkgs, ... }:
-
+let
+  user = "justin";
+in
 {
   imports =
     [ # Include the results of the hardware scan.
@@ -36,18 +38,14 @@
 
   #Networking Configuration
   networking.hostName = "nixos"; # Define your hostname.
-  networking.networkmanager.enable = true;  # Easiest to use and most distros use this by default.
+  #networking.networkmanager.enable = true;  # Easiest to use and most distros use this by default.
+  networking.dhcpcd.enable = true;
 
   # Set your time zone.
   time.timeZone = "America/New_York";
 
   # Select internationalisation properties.
   i18n.defaultLocale = "en_US.UTF-8";
-  #console = {
-  #  font = "Lat2-Terminus16";
-  #  keyMap = "us";
-  #  useXkbConfig = true; # use xkbOptions in tty.
-  #};
 
   nixpkgs.config.allowUnfree = true;
 
@@ -57,17 +55,18 @@
     };
   };
 
-  hardware = {
-    opengl.enable = true;
-    nvidia.modesetting.enable = true;
-    nvidia.package = config.boot.kernelPackages.nvidiaPackages.latest;
-  };
+  #hardware = {
+  #  opengl.enable = true;
+  #  nvidia.modesetting.enable = true;
+  #  nvidia.package = config.boot.kernelPackages.nvidiaPackages.latest;
+  #};
+
   services.xserver = {
     enable = true;
     autorun = true;
     layout = "us";
 
-    videoDrivers = ["nvidia"];
+    #videoDrivers = ["nvidia"];
 
     desktopManager = {
       xterm.enable = false;
@@ -76,6 +75,7 @@
     displayManager = {
       sddm.enable = true;
       defaultSession = "none+i3";
+      #sddm.theme = "${sddm-theme}";
     };
 
     windowManager.i3 = {
@@ -95,7 +95,6 @@
   ];
 
   #Sound Configuration
-  security.rtkit.enable = true;
   services.pipewire = {
     enable = true;
     alsa.enable = true;
@@ -104,18 +103,13 @@
     jack.enable = true;
   };
 
-  # Enable CUPS to print documents.
-  # services.printing.enable = true;
-
-  # Enable touchpad support (enabled default in most desktopManager).
-  # services.xserver.libinput.enable = true;
-
   # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users.justin = {
+  users.users.${user} = {
     isNormalUser = true;
     extraGroups = [ "wheel" "audio" ]; # Enable ‘sudo’ for the user.
     packages = with pkgs; [
-      vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
+      polkit_gnome
+      vim
       wget
       git
       nitrogen
@@ -131,44 +125,41 @@
       remmina
       freerdp
       gvfs
+      neofetch
     ];
   };
 
   # List packages installed in system profile. To search, run:
-  # $ nix search wget
   environment.systemPackages = with pkgs; [
   ];
 
-  # Some programs need SUID wrappers, can be configured further or are
-  # started in user sessions.
-  # programs.mtr.enable = true;
-  # programs.gnupg.agent = {
-  #   enable = true;
-  #   enableSSHSupport = true;
-  # };
-
   # List services that you want to enable:
+  services = {
+    picom.enable = true;
+  };
+  
+  # Security Configuration
+  security = {
+    polkit.enable = true;
+    rtkit.enable = true;
+  };
 
-  # Enable the OpenSSH daemon.
-  # services.openssh.enable = true;
+  systemd = {
+    user.services.polkit-gnome-authentication-agent-1 = {
+      description = "polkit-gnome-authentication-agent-1";
+      wantedBy = [ "graphical-session.target" ];
+      wants = [ "graphical-session.target" ];
+      after = [ "graphical-session.target" ];
+      serviceConfig = {
+        Type = "simple";
+        ExecStart = "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1";
+        Restart = "on-failure";
+        RestartSec = 1;
+        TimeoutStopSec = 10;
+      };
+    };
+  };
 
-  # Open ports in the firewall.
-  # networking.firewall.allowedTCPPorts = [ ... ];
-  # networking.firewall.allowedUDPPorts = [ ... ];
-  # Or disable the firewall altogether.
-  # networking.firewall.enable = false;
-
-  # Copy the NixOS configuration file and link it from the resulting system
-  # (/run/current-system/configuration.nix). This is useful in case you
-  # accidentally delete configuration.nix.
-  # system.copySystemConfiguration = true;
-
-  # This value determines the NixOS release from which the default
-  # settings for stateful data, like file locations and database versions
-  # on your system were taken. It's perfectly fine and recommended to leave
-  # this value at the release version of the first install of this system.
-  # Before changing this value read the documentation for this option
-  # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
   system.stateVersion = "23.05"; # Did you read the comment?
 
 }
